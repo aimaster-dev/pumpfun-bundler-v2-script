@@ -69,37 +69,39 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
   ): Promise<TransactionResult> {
-    let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
+    // let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
 
     let createTx = await this.getCreateInstructions(
       creator.publicKey,
       createTokenMetadata.name,
       createTokenMetadata.symbol,
-      tokenMetadata.metadataUri,
+      // tokenMetadata.metadataUri,
+      "https://cf-ipfs.com/ipfs/QmWkzxAN4hSuiAgdMexupjBeCqkkLxz7wJBXKTWomUfbBk",
       mint
     );
 
     let newTx = new Transaction().add(createTx);
+    
+    // if (buyAmountSol > 0) {
+      //   const globalAccount = await this.getGlobalAccount(commitment);
+      //   const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
+      //   const buyAmountWithSlippage = calculateWithSlippageBuy(
+        //     buyAmountSol,
+        //     slippageBasisPoints
+        //   );
+        
+    //   const buyTx = await this.getBuyInstructions(
+    //     creator.publicKey,
+    //     mint.publicKey,
+    //     globalAccount.feeRecipient,
+    //     buyAmount,
+    //     buyAmountWithSlippage
+    //   );
 
-    if (buyAmountSol > 0) {
-      const globalAccount = await this.getGlobalAccount(commitment);
-      const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
-      const buyAmountWithSlippage = calculateWithSlippageBuy(
-        buyAmountSol,
-        slippageBasisPoints
-      );
-
-      const buyTx = await this.getBuyInstructions(
-        creator.publicKey,
-        mint.publicKey,
-        globalAccount.feeRecipient,
-        buyAmount,
-        buyAmountWithSlippage
-      );
-
-      newTx.add(buyTx);
-    }
-
+    //   newTx.add(buyTx);
+    // }
+    console.log("+++++++")
+    
     let createResults = await sendTx(
       this.connection,
       newTx,
@@ -194,6 +196,7 @@ export class PumpFunSDK {
       this.getBondingCurvePDA(mint.publicKey),
       true
     );
+    console.log("==")
 
     return this.program.methods
       .create(name, symbol, uri)
@@ -394,7 +397,7 @@ export class PumpFunSDK {
 
   async createTokenMetadata(create: CreateTokenMetadata) {
     let formData = new FormData();
-    formData.append("file", create.file),
+    // formData.append("file", create.file),
     formData.append("name", create.name),
     formData.append("symbol", create.symbol),
     formData.append("description", create.description),

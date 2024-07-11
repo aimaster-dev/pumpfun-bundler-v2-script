@@ -70,7 +70,7 @@ const main = async () => {
       name: "TST-7",
       symbol: "TST-7",
       description: "TST-7: This is a test token",
-      file: await fs.openAsBlob("example/basic/random.png"),
+      // file: fs.openAsBlob("example/basic/random.png"),
     };
 
     let createResults = await sdk.createAndBuy(
@@ -80,8 +80,8 @@ const main = async () => {
       BigInt(0.0001 * LAMPORTS_PER_SOL),
       SLIPPAGE_BASIS_POINTS,
       {
-        unitLimit: 250000,
-        unitPrice: 250000,
+        unitLimit: 5_000_000,
+        unitPrice: 200_000,
       },
     );
 

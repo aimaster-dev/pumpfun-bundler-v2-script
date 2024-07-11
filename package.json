@@ -2,7 +2,6 @@
   "name": "pumpdotfun-sdk",
   "version": "1.3.2",
   "description": "A simple SDK for interacting with pumpdotfun",
-  
   "module": "./dist/esm/index.js",
   "main": "./dist/cjs/index.js",
   "browser": "./dist/browser/index.js",
@@ -11,7 +10,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rimraf dist/ && npm run build:node && npm run build:browser",
     "build:node": "tsc && tsc -p tsconfig.cjs.json",
-    "build:browser": "rollup -c rollup.config.js --bundleConfigAsCjs"
+    "build:browser": "rollup -c rollup.config.js --bundleConfigAsCjs",
+    "metadata": "npx ts-node ./example/basic/uploadToIpfs.ts"
   },
   "files": [
     "dist",
@@ -45,8 +45,10 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
+    "@fleekxyz/sdk": "^1.4.2",
     "@rollup/plugin-json": "^6.1.0",
     "@solana/spl-token": "0.4.6",
-    "@solana/web3.js": "^1.92.1"
+    "@solana/web3.js": "^1.92.1",
+    "tsx": "^4.16.2"
   }
 }

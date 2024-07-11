@@ -40,6 +40,7 @@ import {
   sendTx,
 } from "./util";
 import { PumpFun, IDL } from "./IDL";
+import { getUploadedMetadataURI } from "./uploadToIpfs";
 const PROGRAM_ID = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 const MPL_TOKEN_METADATA_PROGRAM_ID =
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
@@ -76,7 +77,7 @@ export class PumpFunSDK {
       createTokenMetadata.name,
       createTokenMetadata.symbol,
       // tokenMetadata.metadataUri,
-      "https://cf-ipfs.com/ipfs/QmWkzxAN4hSuiAgdMexupjBeCqkkLxz7wJBXKTWomUfbBk",
+      getUploadedMetadataURI(),
       mint
     );
 

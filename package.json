@@ -11,7 +11,7 @@
     "build": "rimraf dist/ && npm run build:node && npm run build:browser",
     "build:node": "tsc && tsc -p tsconfig.cjs.json",
     "build:browser": "rollup -c rollup.config.js --bundleConfigAsCjs",
-    "metadata": "npx ts-node ./example/basic/uploadToIpfs.ts"
+    "start": "npx ts-node ./example/basic/index.ts"
   },
   "files": [
     "dist",
@@ -49,6 +49,7 @@
     "@rollup/plugin-json": "^6.1.0",
     "@solana/spl-token": "0.4.6",
     "@solana/web3.js": "^1.92.1",
-    "tsx": "^4.16.2"
+    "tsx": "^4.16.2",
+    "undici": "^6.19.2"
   }
 }

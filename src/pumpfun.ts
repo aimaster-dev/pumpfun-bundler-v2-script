@@ -7,6 +7,7 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { Program, Provider } from "@coral-xyz/anchor";
+import { setGlobalDispatcher, Agent } from 'undici'
 import { GlobalAccount } from "./globalAccount";
 import {
   CompleteEvent,
@@ -70,38 +71,40 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
   ): Promise<TransactionResult> {
-    // let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
-
+    let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
+    console.log("token metadata -- ", tokenMetadata)
+    
     let createTx = await this.getCreateInstructions(
       creator.publicKey,
       createTokenMetadata.name,
       createTokenMetadata.symbol,
-      // tokenMetadata.metadataUri,
-      getUploadedMetadataURI(),
+      tokenMetadata.metadataUri,
+      // await getUploadedMetadataURI(),
+      // "https://cf-ipfs.com/ipfs/QmbvmKckDatFNwo4wF4BCePdRLYWrHnWs9ukMSBbz9vsCN",
       mint
     );
 
     let newTx = new Transaction().add(createTx);
     
-    // if (buyAmountSol > 0) {
-      //   const globalAccount = await this.getGlobalAccount(commitment);
-      //   const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
-      //   const buyAmountWithSlippage = calculateWithSlippageBuy(
-        //     buyAmountSol,
-        //     slippageBasisPoints
-        //   );
+    if (buyAmountSol > 0) {
+        const globalAccount = await this.getGlobalAccount(commitment);
+        const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
+        const buyAmountWithSlippage = calculateWithSlippageBuy(
+            buyAmountSol,
+            slippageBasisPoints
+          );
         
-    //   const buyTx = await this.getBuyInstructions(
-    //     creator.publicKey,
-    //     mint.publicKey,
-    //     globalAccount.feeRecipient,
-    //     buyAmount,
-    //     buyAmountWithSlippage
-    //   );
+      const buyTx = await this.getBuyInstructions(
+        creator.publicKey,
+        mint.publicKey,
+        globalAccount.feeRecipient,
+        // buyAmount,
+        5n,
+        buyAmountWithSlippage
+      );
 
-    //   newTx.add(buyTx);
-    // }
-    console.log("+++++++")
+      newTx.add(buyTx);
+    }
     
     let createResults = await sendTx(
       this.connection,
@@ -197,7 +200,6 @@ export class PumpFunSDK {
       this.getBondingCurvePDA(mint.publicKey),
       true
     );
-    console.log("==")
 
     return this.program.methods
       .create(name, symbol, uri)
@@ -398,7 +400,7 @@ export class PumpFunSDK {
 
   async createTokenMetadata(create: CreateTokenMetadata) {
     let formData = new FormData();
-    // formData.append("file", create.file),
+    formData.append("file", create.file),
     formData.append("name", create.name),
     formData.append("symbol", create.symbol),
     formData.append("description", create.description),
@@ -406,6 +408,8 @@ export class PumpFunSDK {
     formData.append("telegram", create.telegram || ""),
     formData.append("website", create.website || ""),
     formData.append("showName", "true");
+
+    setGlobalDispatcher(new Agent({ connect: { timeout: 60_000 } }) )
     let request = await fetch("https://pump.fun/api/ipfs", {
       method: "POST",
       body: formData,

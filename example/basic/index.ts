@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import fs from "fs";
+import fs, { openAsBlob } from "fs";
 import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { DEFAULT_DECIMALS, PumpFunSDK } from "../../src";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
@@ -10,6 +10,9 @@ import {
   printSOLBalance,
   printSPLBalance,
 } from "../util";
+import metadata from "../../src/metadata";
+import { getUploadedMetadataURI } from "../../src/uploadToIpfs";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 const KEYS_FOLDER = __dirname + "/.keys";
 const SLIPPAGE_BASIS_POINTS = 100n;
@@ -18,6 +21,29 @@ const SLIPPAGE_BASIS_POINTS = 100n;
 //https://solscan.io/tx/bok9NgPeoJPtYQHoDqJZyRDmY88tHbPcAk1CJJsKV3XEhHpaTZhUCG3mA9EQNXcaUfNSgfPkuVbEsKMp6H7D9NY
 //devnet faucet
 //https://faucet.solana.com/
+
+async function createKeypair() {
+  // Generate a new keypair
+  const keypair = Keypair.generate();
+
+  // Extract the public key and secret key
+  const publicKey = keypair.publicKey;
+  const secretKey = keypair.secretKey;
+
+  // Convert keys to base58 strings (for display or storage)
+  const publicKeyBase58 = publicKey.toBase58();
+  const secretKeyBase58 = bs58.encode(secretKey);
+
+  const data = {
+    "publicKey": publicKeyBase58,
+    "secretKey": secretKeyBase58
+  }
+  const metadataString = JSON.stringify(data);
+  const bufferContent = Buffer.from(metadataString, 'utf-8');
+  fs.writeFileSync("./example/basic/.keys/mint.json",bufferContent);
+
+  return keypair; // Return the keypair object if needed
+}
 
 const main = async () => {
   dotenv.config();
@@ -38,7 +64,10 @@ const main = async () => {
     commitment: "finalized",
   });
 
+  await createKeypair();
+
   const testAccount = getOrCreateKeypair(KEYS_FOLDER, "test-account");
+  const buyer = getOrCreateKeypair(KEYS_FOLDER, "buyer");
   const mint = getOrCreateKeypair(KEYS_FOLDER, "mint");
 
   await printSOLBalance(
@@ -61,16 +90,21 @@ const main = async () => {
     return;
   }
 
-  console.log(await sdk.getGlobalAccount());
+  // console.log(await sdk.getGlobalAccount());
 
   //Check if mint already exists
   let boundingCurveAccount = await sdk.getBondingCurveAccount(mint.publicKey);
   if (!boundingCurveAccount) {
     let tokenMetadata = {
-      name: "TST-7",
-      symbol: "TST-7",
-      description: "TST-7: This is a test token",
-      // file: fs.openAsBlob("example/basic/random.png"),
+      name: metadata.name,
+      symbol: metadata.symbol,
+      description: metadata.description,
+      showName: metadata.showName,
+      createOn: metadata.createdOn,
+      twitter: metadata.twitter,
+      telegram: metadata.telegram,
+      website: metadata.website,
+      file: await openAsBlob("./IO.png"),
     };
 
     let createResults = await sdk.createAndBuy(
@@ -105,13 +139,31 @@ const main = async () => {
       BigInt(0.0001 * LAMPORTS_PER_SOL),
       SLIPPAGE_BASIS_POINTS,
       {
-        unitLimit: 250000,
-        unitPrice: 250000,
+        unitLimit: 5_000_000,
+        unitPrice: 200_000,
       },
     );
 
     if (buyResults.success) {
       printSPLBalance(connection, mint.publicKey, testAccount.publicKey);
+      console.log("Bonding curve after buy", await sdk.getBondingCurveAccount(mint.publicKey));
+    } else {
+      console.log("Buy failed");
+    }
+
+    let buyResultsByBuyer = await sdk.buy(
+      buyer,
+      mint.publicKey,
+      BigInt(0.0001 * LAMPORTS_PER_SOL),
+      SLIPPAGE_BASIS_POINTS,
+      {
+        unitLimit: 5_000_000,
+        unitPrice: 200_000,
+      },
+    );
+
+    if (buyResultsByBuyer.success) {
+      printSPLBalance(connection, mint.publicKey, buyer.publicKey);
       console.log("Bonding curve after buy", await sdk.getBondingCurveAccount(mint.publicKey));
     } else {
       console.log("Buy failed");
@@ -124,30 +176,30 @@ const main = async () => {
       testAccount.publicKey
     );
     console.log("currentSPLBalance", currentSPLBalance);
-    if (currentSPLBalance) {
-      let sellResults = await sdk.sell(
-        testAccount,
-        mint.publicKey,
-        BigInt(currentSPLBalance * Math.pow(10, DEFAULT_DECIMALS)),
-        SLIPPAGE_BASIS_POINTS,
-        {
-          unitLimit: 250000,
-          unitPrice: 250000,
-        },
-      );
-      if (sellResults.success) {
-        await printSOLBalance(
-          connection,
-          testAccount.publicKey,
-          "Test Account keypair"
-        );
+    // if (currentSPLBalance) {
+    //   let sellResults = await sdk.sell(
+    //     testAccount,
+    //     mint.publicKey,
+    //     BigInt(currentSPLBalance * Math.pow(10, DEFAULT_DECIMALS)),
+    //     SLIPPAGE_BASIS_POINTS,
+    //     {
+    //       unitLimit: 5_000_000,
+    //     unitPrice: 200_000,
+    //     },
+    //   );
+    //   if (sellResults.success) {
+    //     await printSOLBalance(
+    //       connection,
+    //       testAccount.publicKey,
+    //       "Test Account keypair"
+    //     );
 
-        printSPLBalance(connection, mint.publicKey, testAccount.publicKey, "After SPL sell all");
-        console.log("Bonding curve after sell", await sdk.getBondingCurveAccount(mint.publicKey));
-      } else {
-        console.log("Sell failed");
-      }
-    }
+    //     printSPLBalance(connection, mint.publicKey, testAccount.publicKey, "After SPL sell all");
+    //     console.log("Bonding curve after sell", await sdk.getBondingCurveAccount(mint.publicKey));
+    //   } else {
+    //     console.log("Sell failed");
+    //   }
+    // }
   }
 };
 

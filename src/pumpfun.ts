@@ -73,39 +73,39 @@ export class PumpFunSDK {
   ): Promise<TransactionResult> {
     let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
     console.log("token metadata -- ", tokenMetadata)
-    
+
     let createTx = await this.getCreateInstructions(
       creator.publicKey,
       createTokenMetadata.name,
       createTokenMetadata.symbol,
-      tokenMetadata.metadataUri,
-      // await getUploadedMetadataURI(),
-      // "https://cf-ipfs.com/ipfs/QmbvmKckDatFNwo4wF4BCePdRLYWrHnWs9ukMSBbz9vsCN",
+      // tokenMetadata.metadataUri,
+      await getUploadedMetadataURI(),       // when use custom metadata
+      // "https://cf-ipfs.com/ipfs/QmbvmKckDatFNwo4wF4BCePdRLYWrHnWs9ukMSBbz9vsCN",       // when use already launched token's metadata
       mint
     );
 
     let newTx = new Transaction().add(createTx);
-    
+
     if (buyAmountSol > 0) {
-        const globalAccount = await this.getGlobalAccount(commitment);
-        const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
-        const buyAmountWithSlippage = calculateWithSlippageBuy(
-            buyAmountSol,
-            slippageBasisPoints
-          );
-        
+      const globalAccount = await this.getGlobalAccount(commitment);
+      const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
+      const buyAmountWithSlippage = calculateWithSlippageBuy(
+        buyAmountSol,
+        slippageBasisPoints
+      );
+
       const buyTx = await this.getBuyInstructions(
         creator.publicKey,
         mint.publicKey,
         globalAccount.feeRecipient,
-        // buyAmount,
-        5n,
+        // buyAmount,     // buy initial price
+        5n,               // buy custom price
         buyAmountWithSlippage
       );
 
       newTx.add(buyTx);
     }
-    
+
     let createResults = await sendTx(
       this.connection,
       newTx,
@@ -401,15 +401,15 @@ export class PumpFunSDK {
   async createTokenMetadata(create: CreateTokenMetadata) {
     let formData = new FormData();
     formData.append("file", create.file),
-    formData.append("name", create.name),
-    formData.append("symbol", create.symbol),
-    formData.append("description", create.description),
-    formData.append("twitter", create.twitter || ""),
-    formData.append("telegram", create.telegram || ""),
-    formData.append("website", create.website || ""),
-    formData.append("showName", "true");
+      formData.append("name", create.name),
+      formData.append("symbol", create.symbol),
+      formData.append("description", create.description),
+      formData.append("twitter", create.twitter || ""),
+      formData.append("telegram", create.telegram || ""),
+      formData.append("website", create.website || ""),
+      formData.append("showName", "true");
 
-    setGlobalDispatcher(new Agent({ connect: { timeout: 60_000 } }) )
+    setGlobalDispatcher(new Agent({ connect: { timeout: 60_000 } }))
     let request = await fetch("https://pump.fun/api/ipfs", {
       method: "POST",
       body: formData,

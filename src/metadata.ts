@@ -1,6 +1,6 @@
 const metadata = {
-    "name": "VEER TOKEN",
-    "symbol": "VEER",
+    "name": "Bolt token",
+    "symbol": "Bolt2",
     "description": "Brave Veer & Bolt",
     "image": "",
     "showName": true,

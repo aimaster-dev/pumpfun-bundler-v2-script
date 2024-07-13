@@ -38,10 +38,12 @@ import {
   DEFAULT_FINALITY,
   calculateWithSlippageBuy,
   calculateWithSlippageSell,
+  getRandomInt,
   sendTx,
 } from "./util";
 import { PumpFun, IDL } from "./IDL";
 import { getUploadedMetadataURI } from "./uploadToIpfs";
+
 const PROGRAM_ID = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 const MPL_TOKEN_METADATA_PROGRAM_ID =
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
@@ -64,6 +66,7 @@ export class PumpFunSDK {
   async createAndBuy(
     creator: Keypair,
     mint: Keypair,
+    buyers: Keypair[],
     createTokenMetadata: CreateTokenMetadata,
     buyAmountSol: bigint,
     slippageBasisPoints: bigint = 500n,
@@ -71,46 +74,70 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
   ): Promise<TransactionResult> {
-    let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
-    console.log("token metadata -- ", tokenMetadata)
+    // let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
+    // console.log("token metadata -- ", tokenMetadata)
+
+    const metadataUri = await getUploadedMetadataURI();
+    // console.log(metadataUri)
 
     let createTx = await this.getCreateInstructions(
       creator.publicKey,
       createTokenMetadata.name,
       createTokenMetadata.symbol,
       // tokenMetadata.metadataUri,
-      await getUploadedMetadataURI(),       // when use custom metadata
+      metadataUri,       // when use custom metadata
       // "https://cf-ipfs.com/ipfs/QmbvmKckDatFNwo4wF4BCePdRLYWrHnWs9ukMSBbz9vsCN",       // when use already launched token's metadata
       mint
     );
 
     let newTx = new Transaction().add(createTx);
-
-    if (buyAmountSol > 0) {
-      const globalAccount = await this.getGlobalAccount(commitment);
-      const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
-      const buyAmountWithSlippage = calculateWithSlippageBuy(
-        buyAmountSol,
-        slippageBasisPoints
-      );
-
-      const buyTx = await this.getBuyInstructions(
-        creator.publicKey,
-        mint.publicKey,
-        globalAccount.feeRecipient,
-        // buyAmount,     // buy initial price
-        5n,               // buy custom price
-        buyAmountWithSlippage
-      );
-
-      newTx.add(buyTx);
-    }
-
     let createResults = await sendTx(
       this.connection,
       newTx,
       creator.publicKey,
       [creator, mint],
+      priorityFees,
+      commitment,
+      finality
+    );
+    let buyTxs = new Transaction();
+    if (buyAmountSol > 0) {
+      const globalAccount = await this.getGlobalAccount(commitment);
+      for(let i = 0; i < buyers.length; i++)
+      {
+        const randomPercent = getRandomInt(10,25);
+        const buyAmountSolWithRandom = buyAmountSol / BigInt(100) * BigInt(randomPercent % 2 ? (100 + randomPercent) : (100 - randomPercent))
+        // const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSolWithRandom);
+        // const buyAmountWithSlippage = calculateWithSlippageBuy(
+        //   buyAmountSolWithRandom,
+        //   slippageBasisPoints
+        // );
+
+        // const buyTx = await this.getBuyInstructions(
+        //   buyers[i].publicKey,
+        //   mint.publicKey,
+        //   // new PublicKey("3ZQuEN9gE14TXxYnMvWq86RBvh6wTdvtSaM1hhdXb2xQ"),
+        //   globalAccount.feeRecipient,
+        //   buyAmount,     // buy initial price
+        //   buyAmountWithSlippage,
+        // );
+        let buyTx = await this.getBuyInstructionsBySolAmount(
+          buyers[i].publicKey,
+          mint.publicKey,
+          buyAmountSolWithRandom,
+          slippageBasisPoints,
+          commitment
+        );
+        
+        buyTxs.add(buyTx);
+      }
+    }
+    
+    await sendTx(
+      this.connection,
+      buyTxs,
+      creator.publicKey,
+      [creator],
       priorityFees,
       commitment,
       finality
@@ -241,7 +268,7 @@ export class PumpFunSDK {
       mint,
       globalAccount.feeRecipient,
       buyAmount,
-      buyAmountWithSlippage
+      buyAmountWithSlippage,
     );
   }
 
@@ -252,7 +279,7 @@ export class PumpFunSDK {
     feeRecipient: PublicKey,
     amount: bigint,
     solAmount: bigint,
-    commitment: Commitment = DEFAULT_COMMITMENT
+    commitment: Commitment = DEFAULT_COMMITMENT,
   ) {
     const associatedBondingCurve = await getAssociatedTokenAddress(
       mint,
@@ -264,18 +291,18 @@ export class PumpFunSDK {
 
     let transaction = new Transaction();
 
-    try {
-      await getAccount(this.connection, associatedUser, commitment);
-    } catch (e) {
-      transaction.add(
-        createAssociatedTokenAccountInstruction(
-          buyer,
-          associatedUser,
-          buyer,
-          mint
-        )
-      );
-    }
+      try {
+        await getAccount(this.connection, associatedUser, commitment);
+      } catch (e) {
+        transaction.add(
+          createAssociatedTokenAccountInstruction(
+            buyer,
+            associatedUser,
+            buyer,
+            mint
+          )
+        );
+      }
 
     transaction.add(
       await this.program.methods

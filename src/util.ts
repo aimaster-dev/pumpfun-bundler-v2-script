@@ -52,12 +52,9 @@ export async function sendTx(
     newTx.add(modifyComputeUnits);
     newTx.add(addPriorityFee);
   }
-
   newTx.add(tx);
-
   let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment);
   versionedTx.sign(signers);
-
   try {
     const sig = await connection.sendTransaction(versionedTx, {
       skipPreflight: false,
@@ -129,3 +126,9 @@ export const getTxDetails = async (
     commitment: finality,
   });
 };
+
+export const getRandomInt = (min: number, max: number): number => {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min; // The maximum is inclusive, the minimum is inclusive
+}

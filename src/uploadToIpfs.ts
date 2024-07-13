@@ -7,8 +7,8 @@ dotenv.config();
 
 const pat = process.env.PAT || '';
 const project_id = process.env.PROJECT_ID || '';
-const imageName = "IO.png";
-const metadataName = "metadata.json";
+const imageName = "./upload/bolt.jpg";
+const metadataName = "./upload/metadata.json";
 
 const patService = new PersonalAccessTokenService({
   personalAccessToken: pat,

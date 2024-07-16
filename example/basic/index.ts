@@ -113,8 +113,9 @@ const main = async () => {
       },
     );
 
-    if (createResults.success) {
+    if (createResults.confirmed) {
       console.log("Success:", `https://pump.fun/${mint.publicKey.toBase58()}`);
+      console.log(createResults.jitoTxsignature);
       boundingCurveAccount = await sdk.getBondingCurveAccount(mint.publicKey);
       console.log("Bonding curve after create and buy", boundingCurveAccount);
       printSPLBalance(connection, mint.publicKey, testAccount.publicKey);
@@ -125,44 +126,45 @@ const main = async () => {
     printSPLBalance(connection, mint.publicKey, testAccount.publicKey);
   }
 
-  // if (boundingCurveAccount) {
-  //   //buy 0.0001 SOL worth of tokens
-  //   let buyResults = await sdk.buy(
-  //     testAccount,
-  //     // mint.publicKey,
-  //     new PublicKey("3ZQuEN9gE14TXxYnMvWq86RBvh6wTdvtSaM1hhdXb2xQ"),
-  //     BigInt(0.0001 * LAMPORTS_PER_SOL),
-  //     SLIPPAGE_BASIS_POINTS,
-  //     {
-  //       unitLimit: 5_000_000,
-  //       unitPrice: 200_000,
-  //     },
-  //   );
-  //   if (buyResults.success) {
-  //     printSPLBalance(connection, mint.publicKey, testAccount.publicKey);
-  //     console.log("Bonding curve after buy", await sdk.getBondingCurveAccount(mint.publicKey));
-  //   } else {
-  //     console.log("Buy failed");
-  //   }
+  if (boundingCurveAccount) {
+    //buy 0.0001 SOL worth of tokens
+    // let buyResults = await sdk.buy(
+    //   testAccount,
+    //   // mint.publicKey,
+    //   new PublicKey("3ZQuEN9gE14TXxYnMvWq86RBvh6wTdvtSaM1hhdXb2xQ"),
+    //   BigInt(0.0001 * LAMPORTS_PER_SOL),
+    //   SLIPPAGE_BASIS_POINTS,
+    //   {
+    //     unitLimit: 5_000_000,
+    //     unitPrice: 200_000,
+    //   },
+    // );
+    // if (buyResults.success) {
+    //   printSPLBalance(connection, mint.publicKey, testAccount.publicKey);
+    //   console.log("Bonding curve after buy", await sdk.getBondingCurveAccount(mint.publicKey));
+    // } else {
+    //   console.log("Buy failed");
+    // }
 
-  //   // buy 0.0001 SOL worth of tokens
-  //   // let buyResultsByBuyer = await sdk.buy(
-  //   //   buyer,
-  //   //   mint.publicKey,
-  //   //   BigInt(0.0001 * LAMPORTS_PER_SOL),
-  //   //   SLIPPAGE_BASIS_POINTS,
-  //   //   {
-  //   //     unitLimit: 5_000_000,
-  //   //     unitPrice: 200_000,
-  //   //   },
-  //   // );
+    // buy 0.0001 SOL worth of tokens
+    // let buyResultsByBuyer = await sdk.buy(
+    //   buyer,
+    //   // mint.publicKey,
+    //   new PublicKey("p89evAyzjd9fphjJx7G3RFA48sbZdpGEppRcfRNpump"),
+    //   BigInt(0.0001 * LAMPORTS_PER_SOL),
+    //   SLIPPAGE_BASIS_POINTS,
+    //   {
+    //     unitLimit: 5_000_000,
+    //     unitPrice: 200_000,
+    //   },
+    // );
 
-  //   // if (buyResultsByBuyer.success) {
-  //   //   printSPLBalance(connection, mint.publicKey, buyer.publicKey);
-  //   //   console.log("Bonding curve after buy ", await sdk.getBondingCurveAccount(mint.publicKey));
-  //   // } else {
-  //   //   console.log("Buy failed");
-  //   // }
+    // if (buyResultsByBuyer.success) {
+    //   printSPLBalance(connection, mint.publicKey, buyer.publicKey);
+    //   console.log("Bonding curve after buy ", await sdk.getBondingCurveAccount(mint.publicKey));
+    // } else {
+    //   console.log("Buy failed");
+    // }
 
   //   //sell all tokens
   //   // let currentSPLBalance = await getSPLBalance(
@@ -195,7 +197,7 @@ const main = async () => {
   //   //     console.log("Sell failed");
   //   //   }
   //   // }
-  // }
+  }
 };
 
 main();

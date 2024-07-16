@@ -12,6 +12,7 @@ import {
   VersionedTransactionResponse,
 } from "@solana/web3.js";
 import { PriorityFee, TransactionResult } from "./types";
+import fs from "fs"
 
 export const DEFAULT_COMMITMENT: Commitment = "finalized";
 export const DEFAULT_FINALITY: Finality = "finalized";
@@ -56,6 +57,10 @@ export async function sendTx(
   let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment);
   versionedTx.sign(signers);
   try {
+    // console.dir((await connection.simulateTransaction(versionedTx, undefined)).value.logs, {depth: null,showHidden: true})
+    // fs.writeFileSync("1.txt",(await connection.simulateTransaction(versionedTx, undefined)).value.logs?)
+    console.log((await connection.simulateTransaction(versionedTx, undefined)))
+
     const sig = await connection.sendTransaction(versionedTx, {
       skipPreflight: false,
     });
@@ -76,7 +81,6 @@ export async function sendTx(
   } catch (e) {
     if (e instanceof SendTransactionError) {
       let ste = e as SendTransactionError;
-      console.log(await ste.getLogs(connection));
     } else {
       console.error(e);
     }
@@ -85,6 +89,37 @@ export async function sendTx(
       success: false,
     };
   }
+}
+
+export async function buildTx(
+  connection: Connection,
+  tx: Transaction,
+  payer: PublicKey,
+  signers: Keypair[],
+  priorityFees?: PriorityFee,
+  commitment: Commitment = DEFAULT_COMMITMENT,
+  finality: Finality = DEFAULT_FINALITY
+): Promise<VersionedTransaction> {
+  let newTx = new Transaction();
+
+  if (priorityFees) {
+    const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
+      units: priorityFees.unitLimit,
+    });
+
+    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+      microLamports: priorityFees.unitPrice,
+    });
+    newTx.add(modifyComputeUnits);
+    newTx.add(addPriorityFee);
+  }
+  newTx.add(tx);
+  let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment);
+  // console.dir(versionedTx, { depth: null })
+  versionedTx.sign(signers);
+  // (await connection.simulateTransaction(versionedTx, undefined)).value.logs?.forEach(str => console.log(str))
+  console.log((await connection.simulateTransaction(versionedTx, undefined)))
+  return versionedTx;
 }
 
 export const buildVersionedTx = async (

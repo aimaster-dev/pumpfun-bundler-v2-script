@@ -5,6 +5,7 @@ import {
   Keypair,
   PublicKey,
   Transaction,
+  VersionedTransaction,
 } from "@solana/web3.js";
 import { Program, Provider } from "@coral-xyz/anchor";
 import { setGlobalDispatcher, Agent } from 'undici'
@@ -36,6 +37,7 @@ import { BN } from "bn.js";
 import {
   DEFAULT_COMMITMENT,
   DEFAULT_FINALITY,
+  buildTx,
   calculateWithSlippageBuy,
   calculateWithSlippageSell,
   getRandomInt,
@@ -43,6 +45,10 @@ import {
 } from "./util";
 import { PumpFun, IDL } from "./IDL";
 import { getUploadedMetadataURI } from "./uploadToIpfs";
+import { jitoWithAxios } from "./jitoWithAxios";
+import { RPC_ENDPOINT, RPC_WEBSOCKET_ENDPOINT } from "./constants";
+import { global_mint } from "./config";
+// import { bundle } from "./jito";
 
 const PROGRAM_ID = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 const MPL_TOKEN_METADATA_PROGRAM_ID =
@@ -54,6 +60,8 @@ export const BONDING_CURVE_SEED = "bonding-curve";
 export const METADATA_SEED = "metadata";
 
 export const DEFAULT_DECIMALS = 6;
+const connection = new Connection(RPC_ENDPOINT, { wsEndpoint: RPC_WEBSOCKET_ENDPOINT, commitment: "confirmed" });
+
 
 export class PumpFunSDK {
   public program: Program<PumpFun>;
@@ -69,16 +77,15 @@ export class PumpFunSDK {
     buyers: Keypair[],
     createTokenMetadata: CreateTokenMetadata,
     buyAmountSol: bigint,
-    slippageBasisPoints: bigint = 500n,
+    slippageBasisPoints: bigint = 300n,
     priorityFees?: PriorityFee,
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
-  ): Promise<TransactionResult> {
+  ) {
     // let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
     // console.log("token metadata -- ", tokenMetadata)
 
     const metadataUri = await getUploadedMetadataURI();
-    // console.log(metadataUri)
 
     let createTx = await this.getCreateInstructions(
       creator.publicKey,
@@ -91,7 +98,10 @@ export class PumpFunSDK {
     );
 
     let newTx = new Transaction().add(createTx);
-    let createResults = await sendTx(
+    let buyTxs: VersionedTransaction[] = [];
+
+    console.log(`build create----`)
+    let createVersionedTx = await buildTx(
       this.connection,
       newTx,
       creator.publicKey,
@@ -100,23 +110,24 @@ export class PumpFunSDK {
       commitment,
       finality
     );
-    let buyTxs = new Transaction();
+
     if (buyAmountSol > 0) {
       const globalAccount = await this.getGlobalAccount(commitment);
       for(let i = 0; i < buyers.length; i++)
       {
         const randomPercent = getRandomInt(10,25);
         const buyAmountSolWithRandom = buyAmountSol / BigInt(100) * BigInt(randomPercent % 2 ? (100 + randomPercent) : (100 - randomPercent))
-        // const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSolWithRandom);
-        // const buyAmountWithSlippage = calculateWithSlippageBuy(
-        //   buyAmountSolWithRandom,
-        //   slippageBasisPoints
-        // );
-
+        const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSolWithRandom);
+        const buyAmountWithSlippage = calculateWithSlippageBuy(
+          buyAmountSolWithRandom,
+          slippageBasisPoints
+        );
+        console.log("amonut: ",buyAmount)
+        console.log("with slippage: ",buyAmountWithSlippage)
         // const buyTx = await this.getBuyInstructions(
         //   buyers[i].publicKey,
-        //   mint.publicKey,
-        //   // new PublicKey("3ZQuEN9gE14TXxYnMvWq86RBvh6wTdvtSaM1hhdXb2xQ"),
+        //   // mint.publicKey,
+        //   new PublicKey("3ZQuEN9gE14TXxYnMvWq86RBvh6wTdvtSaM1hhdXb2xQ"),
         //   globalAccount.feeRecipient,
         //   buyAmount,     // buy initial price
         //   buyAmountWithSlippage,
@@ -128,21 +139,31 @@ export class PumpFunSDK {
           slippageBasisPoints,
           commitment
         );
-        
-        buyTxs.add(buyTx);
+
+        console.log(`build buy${i}----`)
+        const buyVersionedTx = await buildTx(
+          this.connection,
+          buyTx,
+          buyers[i].publicKey,
+          [buyers[i]],
+          priorityFees,
+          commitment,
+          finality
+        );
+        buyTxs.push(buyVersionedTx);
       }
     }
     
-    await sendTx(
-      this.connection,
-      buyTxs,
-      creator.publicKey,
-      [creator],
-      priorityFees,
-      commitment,
-      finality
-    );
-    return createResults;
+
+    let result;
+    while(1) {
+      result = await jitoWithAxios([createVersionedTx, ...buyTxs], creator);
+      if (result.confirmed) break;
+    }
+
+    // const result = await bundle([createVersionedTx, ...buyTxs], creator);
+    //   console.log("Bundling result: ", result);
+    return result;
   }
 
   async buy(
@@ -248,7 +269,7 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT
   ) {
     let bondingCurveAccount = await this.getBondingCurveAccount(
-      mint,
+      global_mint,
       commitment
     );
     if (!bondingCurveAccount) {
@@ -260,7 +281,6 @@ export class PumpFunSDK {
       buyAmountSol,
       slippageBasisPoints
     );
-
     let globalAccount = await this.getGlobalAccount(commitment);
 
     return await this.getBuyInstructions(

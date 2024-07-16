@@ -1,5 +1,5 @@
 const requestBody = {
-    mint: 'LszL6n914R3FbcqWtrjY2KJamFutgTyXYFYs7jNpump',
+    mint: 'FP5SwaQvsJRMEqAjYbwMqhGwRDKE6RznXaSjwPof61k3',
     priorityFee: 0.001,
     userPrivateKey: '3qesJ12P92MTNfY3C4Sa8BKWEwRexASEx1RtNnaSZsQaUksVUuiHhvhsBx87SzJpxz3rs3ogu4ytsjSgNLKM7HiU'
 };

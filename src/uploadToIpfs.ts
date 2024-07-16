@@ -38,7 +38,6 @@ export const getUploadedMetadataURI = async (): Promise<string> => {
       "symbol": metadata.symbol,
       "description": metadata.description,
       "image": `https://cf-ipfs.com/ipfs/${imageUploadResult.cid}`,
-      // "image": "https://cf-ipfs.com/ipfs/QmdRbmsBd3cq75jJ5BGxCURKk6gQ1mtErnu5NRSHgXuRy2",
       "showName": metadata.showName,
       "createdOn": metadata.createdOn,
       "twitter": metadata.twitter,
@@ -57,21 +56,4 @@ export const getUploadedMetadataURI = async (): Promise<string> => {
   } catch (error) {
     return "";
   }
-  // uploadFileToIPFS(imageName, fileContent).then(result => {
-  //   console.log('Image uploaded to IPFS:', result);
-  //   console.log('IPFS URL:', `https://cf-ipfs.com/ipfs/${result.cid}`);
-
-  //   uploadFileToIPFS(metadataName, metadataContent).then(result => {
-  //     console.log('File uploaded to IPFS:', result);
-  //     console.log('IPFS URL:', `https://cf-ipfs.com/ipfs/${result.cid}`)
-  //     return `https://cf-ipfs.com/ipfs/${result.cid}`;
-  //   }).catch(error => {
-  //     console.error('Error uploading file to IPFS:', error);
-  //     return "";
-  //   });
-  // }).catch(error => {
-  //   console.error('Error uploading file to IPFS:', error);
-  //   return "";
-  // });
-  // return "";
 }

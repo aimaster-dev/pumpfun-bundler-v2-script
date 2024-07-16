@@ -57,8 +57,6 @@ export async function sendTx(
   let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment);
   versionedTx.sign(signers);
   try {
-    // console.dir((await connection.simulateTransaction(versionedTx, undefined)).value.logs, {depth: null,showHidden: true})
-    // fs.writeFileSync("1.txt",(await connection.simulateTransaction(versionedTx, undefined)).value.logs?)
     console.log((await connection.simulateTransaction(versionedTx, undefined)))
 
     const sig = await connection.sendTransaction(versionedTx, {
@@ -115,10 +113,7 @@ export async function buildTx(
   }
   newTx.add(tx);
   let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment);
-  // console.dir(versionedTx, { depth: null })
   versionedTx.sign(signers);
-  // (await connection.simulateTransaction(versionedTx, undefined)).value.logs?.forEach(str => console.log(str))
-  console.log((await connection.simulateTransaction(versionedTx, undefined)))
   return versionedTx;
 }
 

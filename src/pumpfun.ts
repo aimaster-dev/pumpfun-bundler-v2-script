@@ -48,7 +48,6 @@ import { getUploadedMetadataURI } from "./uploadToIpfs";
 import { jitoWithAxios } from "./jitoWithAxios";
 import { RPC_ENDPOINT, RPC_WEBSOCKET_ENDPOINT } from "./constants";
 import { global_mint } from "./config";
-// import { bundle } from "./jito";
 
 const PROGRAM_ID = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 const MPL_TOKEN_METADATA_PROGRAM_ID =
@@ -60,8 +59,6 @@ export const BONDING_CURVE_SEED = "bonding-curve";
 export const METADATA_SEED = "metadata";
 
 export const DEFAULT_DECIMALS = 6;
-const connection = new Connection(RPC_ENDPOINT, { wsEndpoint: RPC_WEBSOCKET_ENDPOINT, commitment: "confirmed" });
-
 
 export class PumpFunSDK {
   public program: Program<PumpFun>;
@@ -83,7 +80,6 @@ export class PumpFunSDK {
     finality: Finality = DEFAULT_FINALITY
   ) {
     // let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
-    // console.log("token metadata -- ", tokenMetadata)
 
     const metadataUri = await getUploadedMetadataURI();
 
@@ -100,7 +96,6 @@ export class PumpFunSDK {
     let newTx = new Transaction().add(createTx);
     let buyTxs: VersionedTransaction[] = [];
 
-    console.log(`build create----`)
     let createVersionedTx = await buildTx(
       this.connection,
       newTx,
@@ -112,26 +107,11 @@ export class PumpFunSDK {
     );
 
     if (buyAmountSol > 0) {
-      const globalAccount = await this.getGlobalAccount(commitment);
       for(let i = 0; i < buyers.length; i++)
       {
         const randomPercent = getRandomInt(10,25);
         const buyAmountSolWithRandom = buyAmountSol / BigInt(100) * BigInt(randomPercent % 2 ? (100 + randomPercent) : (100 - randomPercent))
-        const buyAmount = globalAccount.getInitialBuyPrice(buyAmountSolWithRandom);
-        const buyAmountWithSlippage = calculateWithSlippageBuy(
-          buyAmountSolWithRandom,
-          slippageBasisPoints
-        );
-        console.log("amonut: ",buyAmount)
-        console.log("with slippage: ",buyAmountWithSlippage)
-        // const buyTx = await this.getBuyInstructions(
-        //   buyers[i].publicKey,
-        //   // mint.publicKey,
-        //   new PublicKey("3ZQuEN9gE14TXxYnMvWq86RBvh6wTdvtSaM1hhdXb2xQ"),
-        //   globalAccount.feeRecipient,
-        //   buyAmount,     // buy initial price
-        //   buyAmountWithSlippage,
-        // );
+    
         let buyTx = await this.getBuyInstructionsBySolAmount(
           buyers[i].publicKey,
           mint.publicKey,
@@ -140,7 +120,6 @@ export class PumpFunSDK {
           commitment
         );
 
-        console.log(`build buy${i}----`)
         const buyVersionedTx = await buildTx(
           this.connection,
           buyTx,
@@ -161,8 +140,6 @@ export class PumpFunSDK {
       if (result.confirmed) break;
     }
 
-    // const result = await bundle([createVersionedTx, ...buyTxs], creator);
-    //   console.log("Bundling result: ", result);
     return result;
   }
 

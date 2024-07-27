@@ -8,7 +8,7 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { Program, Provider } from "@coral-xyz/anchor";
-import { setGlobalDispatcher, Agent } from 'undici'
+import { setGlobalDispatcher, Agent } from "undici";
 import { GlobalAccount } from "./globalAccount";
 import {
   CompleteEvent,
@@ -79,17 +79,14 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
   ) {
-    // let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
-
-    const metadataUri = await getUploadedMetadataURI();
+    let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
+    console.log("metadata: ", tokenMetadata);
 
     let createTx = await this.getCreateInstructions(
       creator.publicKey,
       createTokenMetadata.name,
       createTokenMetadata.symbol,
-      // tokenMetadata.metadataUri,
-      metadataUri,       // when use custom metadata
-      // "https://cf-ipfs.com/ipfs/QmbvmKckDatFNwo4wF4BCePdRLYWrHnWs9ukMSBbz9vsCN",       // when use already launched token's metadata
+      tokenMetadata.metadataUri,
       mint
     );
 
@@ -105,13 +102,13 @@ export class PumpFunSDK {
       commitment,
       finality
     );
-
     if (buyAmountSol > 0) {
-      for(let i = 0; i < buyers.length; i++)
-      {
-        const randomPercent = getRandomInt(10,25);
-        const buyAmountSolWithRandom = buyAmountSol / BigInt(100) * BigInt(randomPercent % 2 ? (100 + randomPercent) : (100 - randomPercent))
-    
+      for (let i = 0; i < buyers.length; i++) {
+        const randomPercent = getRandomInt(10, 25);
+        const buyAmountSolWithRandom =
+          (buyAmountSol / BigInt(100)) *
+          BigInt(randomPercent % 2 ? 100 + randomPercent : 100 - randomPercent);
+
         let buyTx = await this.getBuyInstructionsBySolAmount(
           buyers[i].publicKey,
           mint.publicKey,
@@ -132,10 +129,9 @@ export class PumpFunSDK {
         buyTxs.push(buyVersionedTx);
       }
     }
-    
 
     let result;
-    while(1) {
+    while (1) {
       result = await jitoWithAxios([createVersionedTx, ...buyTxs], creator);
       if (result.confirmed) break;
     }
@@ -265,7 +261,7 @@ export class PumpFunSDK {
       mint,
       globalAccount.feeRecipient,
       buyAmount,
-      buyAmountWithSlippage,
+      buyAmountWithSlippage
     );
   }
 
@@ -276,7 +272,7 @@ export class PumpFunSDK {
     feeRecipient: PublicKey,
     amount: bigint,
     solAmount: bigint,
-    commitment: Commitment = DEFAULT_COMMITMENT,
+    commitment: Commitment = DEFAULT_COMMITMENT
   ) {
     const associatedBondingCurve = await getAssociatedTokenAddress(
       mint,
@@ -288,18 +284,18 @@ export class PumpFunSDK {
 
     let transaction = new Transaction();
 
-      try {
-        await getAccount(this.connection, associatedUser, commitment);
-      } catch (e) {
-        transaction.add(
-          createAssociatedTokenAccountInstruction(
-            buyer,
-            associatedUser,
-            buyer,
-            mint
-          )
-        );
-      }
+    try {
+      await getAccount(this.connection, associatedUser, commitment);
+    } catch (e) {
+      transaction.add(
+        createAssociatedTokenAccountInstruction(
+          buyer,
+          associatedUser,
+          buyer,
+          mint
+        )
+      );
+    }
 
     transaction.add(
       await this.program.methods
@@ -433,9 +429,25 @@ export class PumpFunSDK {
       formData.append("website", create.website || ""),
       formData.append("showName", "true");
 
-    setGlobalDispatcher(new Agent({ connect: { timeout: 60_000 } }))
+    setGlobalDispatcher(new Agent({ connect: { timeout: 60_000 } }));
     let request = await fetch("https://pump.fun/api/ipfs", {
       method: "POST",
+      headers: {
+        Host: "www.pump.fun",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
+        Accept: "*/*",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        Referer: "https://www.pump.fun/create",
+        Origin: "https://www.pump.fun",
+        Connection: "keep-alive",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        Priority: "u=1",
+        TE: "trailers",
+      },
       body: formData,
     });
     return request.json();

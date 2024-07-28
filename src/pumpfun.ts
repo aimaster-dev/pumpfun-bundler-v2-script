@@ -44,10 +44,7 @@ import {
   sendTx,
 } from "./util";
 import { PumpFun, IDL } from "./IDL";
-import { getUploadedMetadataURI } from "./uploadToIpfs";
 import { jitoWithAxios } from "./jitoWithAxios";
-import { RPC_ENDPOINT, RPC_WEBSOCKET_ENDPOINT } from "./constants";
-import { global_mint } from "./config";
 
 const PROGRAM_ID = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 const MPL_TOKEN_METADATA_PROGRAM_ID =
@@ -80,7 +77,6 @@ export class PumpFunSDK {
     finality: Finality = DEFAULT_FINALITY
   ) {
     let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
-    console.log("metadata: ", tokenMetadata);
 
     let createTx = await this.getCreateInstructions(
       creator.publicKey,
@@ -109,23 +105,6 @@ export class PumpFunSDK {
           (buyAmountSol / BigInt(100)) *
           BigInt(randomPercent % 2 ? 100 + randomPercent : 100 - randomPercent);
 
-        // let buyTx = await this.getBuyInstructionsBySolAmount(
-        //   buyers[i].publicKey,
-        //   mint.publicKey,
-        //   buyAmountSolWithRandom,
-        //   slippageBasisPoints,
-        //   commitment
-        // );
-
-        // const buyVersionedTx = await buildTx(
-        //   this.connection,
-        //   buyTx,
-        //   buyers[i].publicKey,
-        //   [buyers[i]],
-        //   priorityFees,
-        //   commitment,
-        //   finality
-        // );
         const globalAccount = await this.getGlobalAccount(commitment);
         const buyAmount = globalAccount.getInitialBuyPrice(
           buyAmountSolWithRandom
@@ -266,7 +245,7 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT
   ) {
     let bondingCurveAccount = await this.getBondingCurveAccount(
-      global_mint,
+      mint,
       commitment
     );
     if (!bondingCurveAccount) {

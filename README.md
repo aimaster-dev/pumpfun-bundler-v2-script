@@ -32,8 +32,11 @@ To launch your token on Pumpfun site, edit the metadata as desired.
 `
 npx ts-node example/basic/index.ts
 `
-You can check token launch and bulding in this link:
-  https://pump.fun/2q4JLenwD1cRhzSLu3uPMQPw4fTEYp7bLtfmBwFLb48v
+You can check token launch and bundling in this link:
+  - pumpfun site
+    https://pump.fun/2q4JLenwD1cRhzSLu3uPMQPw4fTEYp7bLtfmBwFLb48v
+  - solscan.io
+    ![alt text](image.png)
 
 ### PumpDotFunSDK Class
 

@@ -109,14 +109,39 @@ export class PumpFunSDK {
           (buyAmountSol / BigInt(100)) *
           BigInt(randomPercent % 2 ? 100 + randomPercent : 100 - randomPercent);
 
-        let buyTx = await this.getBuyInstructionsBySolAmount(
-          buyers[i].publicKey,
-          mint.publicKey,
+        // let buyTx = await this.getBuyInstructionsBySolAmount(
+        //   buyers[i].publicKey,
+        //   mint.publicKey,
+        //   buyAmountSolWithRandom,
+        //   slippageBasisPoints,
+        //   commitment
+        // );
+
+        // const buyVersionedTx = await buildTx(
+        //   this.connection,
+        //   buyTx,
+        //   buyers[i].publicKey,
+        //   [buyers[i]],
+        //   priorityFees,
+        //   commitment,
+        //   finality
+        // );
+        const globalAccount = await this.getGlobalAccount(commitment);
+        const buyAmount = globalAccount.getInitialBuyPrice(
+          buyAmountSolWithRandom
+        );
+        const buyAmountWithSlippage = calculateWithSlippageBuy(
           buyAmountSolWithRandom,
-          slippageBasisPoints,
-          commitment
+          slippageBasisPoints * 100n
         );
 
+        const buyTx = await this.getBuyInstructions(
+          buyers[i].publicKey,
+          mint.publicKey,
+          globalAccount.feeRecipient,
+          buyAmount,
+          buyAmountWithSlippage
+        );
         const buyVersionedTx = await buildTx(
           this.connection,
           buyTx,
@@ -129,7 +154,6 @@ export class PumpFunSDK {
         buyTxs.push(buyVersionedTx);
       }
     }
-
     let result;
     while (1) {
       result = await jitoWithAxios([createVersionedTx, ...buyTxs], creator);

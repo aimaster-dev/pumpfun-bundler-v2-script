@@ -12,7 +12,7 @@ import {
   VersionedTransactionResponse,
 } from "@solana/web3.js";
 import { PriorityFee, TransactionResult } from "./types";
-import fs from "fs"
+import fs from "fs";
 
 export const DEFAULT_COMMITMENT: Commitment = "finalized";
 export const DEFAULT_FINALITY: Finality = "finalized";
@@ -54,10 +54,15 @@ export async function sendTx(
     newTx.add(addPriorityFee);
   }
   newTx.add(tx);
-  let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment);
+  let versionedTx = await buildVersionedTx(
+    connection,
+    payer,
+    newTx,
+    commitment
+  );
   versionedTx.sign(signers);
   try {
-    console.log((await connection.simulateTransaction(versionedTx, undefined)))
+    console.log(await connection.simulateTransaction(versionedTx, undefined));
 
     const sig = await connection.sendTransaction(versionedTx, {
       skipPreflight: false,
@@ -112,7 +117,12 @@ export async function buildTx(
     newTx.add(addPriorityFee);
   }
   newTx.add(tx);
-  let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment);
+  let versionedTx = await buildVersionedTx(
+    connection,
+    payer,
+    newTx,
+    commitment
+  );
   versionedTx.sign(signers);
   return versionedTx;
 }
@@ -123,8 +133,7 @@ export const buildVersionedTx = async (
   tx: Transaction,
   commitment: Commitment = DEFAULT_COMMITMENT
 ): Promise<VersionedTransaction> => {
-  const blockHash = (await connection.getLatestBlockhash(commitment))
-    .blockhash;
+  const blockHash = (await connection.getLatestBlockhash(commitment)).blockhash;
 
   let messageV0 = new TransactionMessage({
     payerKey: payer,
@@ -161,4 +170,4 @@ export const getRandomInt = (min: number, max: number): number => {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min; // The maximum is inclusive, the minimum is inclusive
-}
+};

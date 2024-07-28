@@ -2,7 +2,7 @@
 import fs from 'fs';
 import { FleekSdk, PersonalAccessTokenService } from '@fleekxyz/sdk';
 import dotenv from 'dotenv';
-import metadata from './metadata';
+import metadata from '../metadata';
 dotenv.config();
 
 const pat = process.env.PAT || '';

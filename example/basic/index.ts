@@ -15,7 +15,7 @@ import {
   printSOLBalance,
   printSPLBalance,
 } from "../util";
-import metadata from "../../src/metadata";
+import metadata from "../../metadata";
 import { getUploadedMetadataURI } from "../../src/uploadToIpfs";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
@@ -102,7 +102,7 @@ const main = async () => {
       twitter: metadata.twitter,
       telegram: metadata.telegram,
       website: metadata.website,
-      file: await openAsBlob("./upload/bolt.jpg"),
+      file: await openAsBlob(metadata.image),
     };
 
     let createResults = await sdk.createAndBuy(

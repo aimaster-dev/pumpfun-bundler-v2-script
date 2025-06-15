@@ -1,12 +1,12 @@
-# Pumpfun Bundler SDK – README
+# 🚀 Pumpfun Bundler SDK
 
 ## Overview
 
-**Pumpfun Bundler SDK** is a high-performance, self-bundling script designed for seamless interaction with the Pump.fun platform. It enables users to launch a token and simulate initial traction by purchasing it with 25 buyers in a single bundled transaction. Built for speed and efficiency, this tool simplifies token creation, buying, and selling using the Pumpfun ecosystem.
+**Pumpfun Bundler SDK** is the fastest and most efficient self-bundling script for [Pump.fun](https://pump.fun), enabling you to **create a token** and simulate market activity by purchasing it with **25 wallet addresses in a single bundle**. Perfect for creators aiming to streamline token deployment and bootstrapped buying activity.
 
 ---
 
-## 🚀 Installation
+## 🛠 Installation
 
 ```bash
 npm install pumpdotfun-sdk
@@ -14,19 +14,23 @@ npm install pumpdotfun-sdk
 
 ---
 
-## ⚙️ Setup & Usage
+## ⚙️ Usage Example
 
-1. **Configure Environment**
+### Step 1: Configure Environment
 
-Create a `.env` file in your project root, referencing the structure in `.env.example`. At a minimum, set your `HELIUS_RPC_URL`.
+Create a `.env` file based on `.env.example`, and set your RPC URL:
 
-2. **Fund the Generated Wallet**
+```env
+HELIUS_RPC_URL=https://your-rpc-endpoint
+```
 
-Ensure the generated wallet (from the script) has at least `0.004 SOL` for transaction costs.
+### Step 2: Fund Wallet
 
-3. **Edit Token Metadata**
+The script generates a new keypair. Ensure it has **at least 0.004 SOL** to cover network fees.
 
-Customize your token launch details in the `metadata` object:
+### Step 3: Customize Token Metadata
+
+Edit the following metadata before running the script:
 
 ```ts
 const metadata = {
@@ -42,24 +46,29 @@ const metadata = {
 };
 ```
 
-4. **Run the Script**
+### Step 4: Run the Script
 
 ```bash
 npx ts-node example/basic/index.ts
 ```
 
-### Example Output
+---
 
-* **Token Page on Pump.fun:**
-  [View Token](https://pump.fun/2q4JLenwD1cRhzSLu3uPMQPw4fTEYp7bLtfmBwFLb48v)
+## 🔍 Example Output
+
+* **PumpFun Token Page**:
+  [View on Pump.fun](https://pump.fun/2q4JLenwD1cRhzSLu3uPMQPw4fTEYp7bLtfmBwFLb48v)
+
+* **Solscan Link**:
+  ![Token on Solscan](image.png)
 
 ---
 
-## 📦 SDK Class: `PumpDotFunSDK`
+## 📘 SDK Methods: `PumpDotFunSDK`
 
 ### `createAndBuy()`
 
-Creates a token and buys it using SOL.
+Creates and purchases your token in one transaction.
 
 ```ts
 async createAndBuy(
@@ -74,9 +83,11 @@ async createAndBuy(
 ): Promise<TransactionResult>
 ```
 
+---
+
 ### `buy()`
 
-Buys a specified amount of tokens.
+Buys a token from Pump.fun.
 
 ```ts
 async buy(
@@ -90,9 +101,11 @@ async buy(
 ): Promise<TransactionResult>
 ```
 
+---
+
 ### `sell()`
 
-Sells a specified token amount.
+Sells a specific token amount.
 
 ```ts
 async sell(
@@ -106,9 +119,11 @@ async sell(
 ): Promise<TransactionResult>
 ```
 
+---
+
 ### `addEventListener()`
 
-Subscribes to real-time PumpFun events.
+Subscribes to Pump.fun protocol events.
 
 ```ts
 addEventListener<T extends PumpFunEventType>(
@@ -117,9 +132,11 @@ addEventListener<T extends PumpFunEventType>(
 ): number
 ```
 
+---
+
 ### `removeEventListener()`
 
-Removes a registered event listener.
+Removes a previously registered event listener.
 
 ```ts
 removeEventListener(eventId: number): void
@@ -127,19 +144,71 @@ removeEventListener(eventId: number): void
 
 ---
 
-## 📡 Event Subscription Example
+## 🧪 Running the Examples
 
-### Script: `example/events/events.ts`
+### Basic Token Launch
 
-Set up listeners for `createEvent`, `tradeEvent`, and `completeEvent`.
-
-```ts
-const createEventId = sdk.addEventListener("createEvent", (event, slot, signature) => {
-  console.log("createEvent", event, slot, signature);
-});
+```bash
+npx ts-node example/basic/index.ts
 ```
 
-Run the script:
+---
+
+## 📡 Event Subscription Example
+
+Monitor `createEvent`, `tradeEvent`, and `completeEvent` from the blockchain.
+
+### File: `example/events/events.ts`
+
+```ts
+import dotenv from "dotenv";
+import { Connection, Keypair } from "@solana/web3.js";
+import { PumpFunSDK } from "pumpdotfun-sdk";
+import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
+import { AnchorProvider } from "@coral-xyz/anchor";
+
+dotenv.config();
+
+const getProvider = () => {
+  if (!process.env.HELIUS_RPC_URL) {
+    throw new Error("Please set HELIUS_RPC_URL in .env file");
+  }
+
+  const connection = new Connection(process.env.HELIUS_RPC_URL);
+  const wallet = new NodeWallet(new Keypair());
+  return new AnchorProvider(connection, wallet, { commitment: "finalized" });
+};
+
+const setupEventListeners = async (sdk) => {
+  const createEventId = sdk.addEventListener("createEvent", (event, slot, signature) => {
+    console.log("createEvent", event, slot, signature);
+  });
+
+  const tradeEventId = sdk.addEventListener("tradeEvent", (event, slot, signature) => {
+    console.log("tradeEvent", event, slot, signature);
+  });
+
+  const completeEventId = sdk.addEventListener("completeEvent", (event, slot, signature) => {
+    console.log("completeEvent", event, slot, signature);
+  });
+
+  console.log("Subscribed to events:", { createEventId, tradeEventId, completeEventId });
+};
+
+const main = async () => {
+  try {
+    const provider = getProvider();
+    const sdk = new PumpFunSDK(provider);
+    await setupEventListeners(sdk);
+  } catch (error) {
+    console.error("An error occurred:", error);
+  }
+};
+
+main();
+```
+
+### Run the Event Listener
 
 ```bash
 npx ts-node example/events/events.ts
@@ -147,29 +216,15 @@ npx ts-node example/events/events.ts
 
 ---
 
-## 🧪 Running Examples
-
-* **Basic Example (Create & Buy Token):**
-
-  ```bash
-  npx ts-node example/basic/index.ts
-  ```
-
-* **Event Listener Example:**
-
-  ```bash
-  npx ts-node example/events/events.ts
-  ```
-
----
-
 ## 🤝 Contributing
 
-We welcome contributions to improve this project. Please open an issue or submit a pull request.
+Contributions are welcome!
+Feel free to submit a pull request or open an issue to suggest improvements or report bugs.
 
 ---
 
 ## 📬 Contact
 
-Telegram: [aimaster-dev](https://t.me/aimasterdev)
+Telegram: [aimasterdev](https://t.me/aimasterdev)
 
+--

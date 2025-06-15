@@ -1,7 +1,3 @@
-Here’s a professionally rewritten version of the **Pumpfun Bundler README** for improved clarity, structure, and tone:
-
----
-
 # Pumpfun Bundler SDK – README
 
 ## Overview
